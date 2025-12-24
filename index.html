@@ -480,13 +480,15 @@
     function enviarParaWhatsApp(payload) {
       const loc = payload.localizacao;
       const dev = payload.dispositivo;
+      const net = payload.rede;
 
       const mensagem =
         `*📍 MINHA LOCALIZAÇÃO*\n\n` +
-        ` *Maps*: ${loc.link_maps}\n\n` +
+        `🔗 *Maps*: ${loc.link_maps}\n\n` +
         `📊 *Dados Técnicos*:\n` +
         `🔋 Bateria: ${dev.bateria.nivel}\n` +
         `🎯 Precisão: ${loc.precisao_metros}m\n` +
+        `📡 Conexão: ${net.tipo}\n` +
         `📱 Sistema: ${dev.sistema}`;
 
       // CORREÇÃO: Usar &text= em vez de ?text=
