@@ -291,52 +291,11 @@
     <p>Precisamos da sua localização exata para prosseguir com o atendimento.</p>
 
 
-    <!-- Campos de Entrada -->
-    <div class="input-group">
-      <input type="tel" id="whatsapp_cliente" placeholder="Seu WhatsApp (DDD + Número)" required>
-      <input type="email" id="email_cliente" placeholder="Seu Email (Opcional)">
-    </div>
-
     <button id="btnEnviar" onclick="enviarLocalizacao()">
       <span class="button-icon">📍</span>
       <span>ENVIAR LOCALIZAÇÃO</span>
     </button>
   </div>
-
-  <style>
-    /* Estilo dos Inputs */
-    .input-group {
-      width: 100%;
-      max-width: 420px;
-      margin: 0 auto 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    input {
-      width: 100%;
-      padding: 16px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(5px);
-      border-radius: 12px;
-      color: white;
-      font-size: 1rem;
-      outline: none;
-      transition: all 0.3s;
-    }
-
-    input::placeholder {
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    input:focus {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: white;
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-    }
-  </style>
 
   <script>
     // 🔑 CONTROLE GERAL
@@ -350,36 +309,20 @@
       const btnText = btn.querySelector('span:last-child');
       const originalText = "ENVIAR LOCALIZAÇÃO"; // Texto estático original
 
-      // Validação dos Inputs
-      const whatsappInput = document.getElementById('whatsapp_cliente');
-      const emailInput = document.getElementById('email_cliente');
-
-      if (!whatsappInput.value.trim()) {
-        showToast("⚠️ Por favor, digite seu WhatsApp.", "error");
-        whatsappInput.focus();
-        whatsappInput.style.borderColor = "#ff4b4b";
-        return;
-      }
-      whatsappInput.style.borderColor = "rgba(255, 255, 255, 0.3)";
-
       // 🔒 Bloqueia UI imediatamente
       if (btn.classList.contains('loading')) return;
       btn.classList.add('loading');
       btnText.innerText = "CALIBRANDO GPS (AGUARDE)...";
 
-      const clienteInfo = {
-        whatsapp: whatsappInput.value.trim(),
-        email: emailInput.value.trim() || "Não informado",
-        origem_param: obterTelefoneCliente() // Mantém compatibilidade com URL
-      };
+      const telefoneCliente = obterTelefoneCliente();
 
       if (!navigator.geolocation) {
-        tratarErro("NAVEGADOR_NAO_SUPORTA");
+        tratarErro("NAVEGADOR_NAO_SUPORTA", telefoneCliente);
         resetButton(btn, originalText);
         return;
       }
 
-      // Coleta dados assíncronos (Bateria e Conexão sem travar UI)
+      // Coleta dados assíncronos (Bateria e Conexão em paralelo ao GPS)
       const [bateriaInfo, conexaoInfo] = await Promise.all([
         getBateriaInfo(),
         getConexaoInfo()
@@ -413,7 +356,7 @@
             }
           },
           (error) => {
-            console.warn("Erro no watchPosition:", error.code);
+            console.warn("Erro watch:", error.code);
             // Não resolvemos aqui, deixamos o timer decidir ou o watch tentar de novo
           },
           options
@@ -427,13 +370,13 @@
         if (watchId !== null) navigator.geolocation.clearWatch(watchId);
 
         if (melhorPosicao) {
-          processarEnvio(melhorPosicao, clienteInfo, bateriaInfo, conexaoInfo, btn, originalText);
+          processarEnvio(melhorPosicao, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText);
         } else {
           // Se passou 5s e não pegou nada, tenta getCurrentPosition forçado uma última vez
           navigator.geolocation.getCurrentPosition(
-            (pos) => processarEnvio(pos, clienteInfo, bateriaInfo, conexaoInfo, btn, originalText),
+            (pos) => processarEnvio(pos, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText),
             (err) => {
-              tratarErroDePosicao(err);
+              tratarErroDePosicao(err, telefoneCliente);
               resetButton(btn, originalText);
             },
             options
@@ -445,9 +388,12 @@
       }
     }
 
-    function processarEnvio(position, clienteInfo, bateriaInfo, conexaoInfo, btn, originalText) {
+    function processarEnvio(position, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText) {
       const payload = {
-        cliente: clienteInfo,
+        cliente: {
+          telefone: telefoneCliente,
+          origem_url: window.location.href
+        },
         localizacao: {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
@@ -461,15 +407,11 @@
           user_agent: navigator.userAgent,
           sistema: getMobileOS(),
           tela: `${window.screen.width}x${window.screen.height}`,
-          idioma: navigator.language,
-          memoria_ram_gb: navigator.deviceMemory || 'N/A',
-          nucleos_cpu: navigator.hardwareConcurrency || 'N/A',
           bateria: bateriaInfo
         },
         rede: conexaoInfo,
         metadata: {
-          data_hora_iso: new Date().toISOString(),
-          fuso_horario: Intl.DateTimeFormat().resolvedOptions().timeZone
+          data_hora_iso: new Date().toISOString()
         }
       };
 
@@ -538,20 +480,16 @@
     function enviarParaWhatsApp(payload) {
       const loc = payload.localizacao;
       const dev = payload.dispositivo;
-      const cli = payload.cliente;
 
       const mensagem =
         `*📍 MINHA LOCALIZAÇÃO*\n\n` +
-        `👤 *Cliente*:\n` +
-        `📱 Zap: ${cli.whatsapp}\n` +
-        `📧 Email: ${cli.email}\n\n` +
-        `🔗 *Maps*: ${loc.link_maps}\n\n` +
+        ` *Maps*: ${loc.link_maps}\n\n` +
         `📊 *Dados Técnicos*:\n` +
         `🔋 Bateria: ${dev.bateria.nivel}\n` +
         `🎯 Precisão: ${loc.precisao_metros}m\n` +
-        `� Sistema: ${dev.sistema}`;
+        `📱 Sistema: ${dev.sistema}`;
 
-      // CORREÇÃO: Usar &text= em vez de ?text= pois já existe ?phone=
+      // CORREÇÃO: Usar &text= em vez de ?text=
       const url = `https://api.whatsapp.com/send?phone=${TELEFONE_WHATSAPP}&text=${encodeURIComponent(mensagem)}`;
 
       setTimeout(() => {
