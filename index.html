@@ -301,15 +301,17 @@
     const MODO_N8N_ATIVO = false; // true = envia JSON | false = WhatsApp direto
     const N8N_WEBHOOK_URL = "https://SEU-N8N/webhook/localizacao";
     const TELEFONE_WHATSAPP = "558186258568";
+    const TEMPO_CALIBRAGEM_MS = 5000; // 5 segundos de "caça" à melhor precisão
 
     async function enviarLocalizacao() {
       const btn = document.getElementById('btnEnviar');
       const btnText = btn.querySelector('span:last-child');
-      const originalText = btnText.innerText;
+      const originalText = "ENVIAR LOCALIZAÇÃO"; // Texto estático original
 
-      // Feedback visual inicial
+      // 🔒 Bloqueia UI imediatamente
+      if (btn.classList.contains('loading')) return; // Previne duplo clique
       btn.classList.add('loading');
-      btnText.innerText = "BUSCANDO SATÉLITES...";
+      btnText.innerText = "CALIBRANDO GPS (AGUARDE)...";
 
       const telefoneCliente = obterTelefoneCliente();
 
@@ -319,29 +321,15 @@
         return;
       }
 
-      // Coleta dados assíncronos (Bateria)
-      let bateriaInfo = { nivel: 'Desconhecido', carreagando: false };
-      try {
-        if (navigator.getBattery) {
-          const battery = await navigator.getBattery();
-          bateriaInfo = {
-            nivel: Math.round(battery.level * 100) + '%',
-            carregando: battery.charging
-          };
-        }
-      } catch (e) { console.log('Erro bateria:', e); }
+      // Coleta dados assíncronos (Bateria e Conexão em paralelo ao GPS)
+      const [bateriaInfo, conexaoInfo] = await Promise.all([
+        getBateriaInfo(),
+        getConexaoInfo()
+      ]);
 
-      // Coleta dados de Conexão
-      let conexaoInfo = { tipo: 'Desconhecido', rtt: 'N/A' };
-      try {
-        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-        if (conn) {
-          conexaoInfo = {
-            tipo: conn.effectiveType || 'Desconhecido',
-            rtt: conn.rtt || 'N/A'
-          };
-        }
-      } catch (e) { console.log('Erro conexão:', e); }
+      // 🎯 MODALIDADE SNIPER: Caça a melhor localização por X segundos
+      let melhorPosicao = null;
+      let watchId = null;
 
       const options = {
         enableHighAccuracy: true,
@@ -349,64 +337,137 @@
         maximumAge: 0
       };
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const payload = {
-            cliente: {
-              telefone: telefoneCliente,
-              origem_url: window.location.href
-            },
-            localizacao: {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              precisao_metros: position.coords.accuracy ? Math.round(position.coords.accuracy) : 'N/A',
-              altitude_metros: position.coords.altitude,
-              velocidade_kmh: position.coords.speed ? (position.coords.speed * 3.6).toFixed(1) : 0,
-              direcao_graus: position.coords.heading || null,
-              link_maps: `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`
-            },
-            dispositivo: {
-              user_agent: navigator.userAgent,
-              sistema: getMobileOS(),
-              tela: `${window.screen.width}x${window.screen.height}`,
-              idioma: navigator.language,
-              memoria_ram_gb: navigator.deviceMemory || 'N/A',
-              nucleos_cpu: navigator.hardwareConcurrency || 'N/A',
-              bateria: bateriaInfo
-            },
-            rede: conexaoInfo,
-            metadata: {
-              data_hora_iso: new Date().toISOString(),
-              fuso_horario: Intl.DateTimeFormat().resolvedOptions().timeZone
+      // Promessa que resolve após o tempo de calibragem
+      const caçarMelhorPosicao = new Promise((resolve) => {
+        // Inicia o timer de encerramento
+        setTimeout(() => {
+          resolve(melhorPosicao);
+        }, TEMPO_CALIBRAGEM_MS);
+
+        // Inicia o monitoramento
+        watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            // Se não tivermos nenhuma ou se a nova for mais precisa (menor número)
+            if (!melhorPosicao || position.coords.accuracy < melhorPosicao.coords.accuracy) {
+              melhorPosicao = position;
+              // Feedback visual Opcional: mostrar precisão melhorando
+              console.log(`Nova precisão: ${Math.round(position.coords.accuracy)}m`);
             }
+          },
+          (error) => {
+            console.warn("Erro no watchPosition:", error.code);
+            // Não resolvemos aqui, deixamos o timer decidir ou o watch tentar de novo
+          },
+          options
+        );
+      });
+
+      try {
+        await caçarMelhorPosicao;
+
+        // Limpa o monitoramento
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+
+        if (melhorPosicao) {
+          processarEnvio(melhorPosicao, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText);
+        } else {
+          // Se passou 5s e não pegou nada, tenta getCurrentPosition forçado uma última vez
+          navigator.geolocation.getCurrentPosition(
+            (pos) => processarEnvio(pos, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText),
+            (err) => {
+              tratarErroDePosicao(err, telefoneCliente);
+              resetButton(btn, originalText);
+            },
+            options
+          );
+        }
+      } catch (e) {
+        console.error(e);
+        resetButton(btn, originalText);
+      }
+    }
+
+    function processarEnvio(position, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText) {
+      const payload = {
+        cliente: {
+          telefone: telefoneCliente,
+          origem_url: window.location.href
+        },
+        localizacao: {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          precisao_metros: position.coords.accuracy ? Math.round(position.coords.accuracy) : 'N/A',
+          altitude_metros: position.coords.altitude,
+          velocidade_kmh: position.coords.speed ? (position.coords.speed * 3.6).toFixed(1) : 0,
+          direcao_graus: position.coords.heading || null,
+          link_maps: `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`
+        },
+        dispositivo: {
+          user_agent: navigator.userAgent,
+          sistema: getMobileOS(),
+          tela: `${window.screen.width}x${window.screen.height}`,
+          idioma: navigator.language,
+          memoria_ram_gb: navigator.deviceMemory || 'N/A',
+          nucleos_cpu: navigator.hardwareConcurrency || 'N/A',
+          bateria: bateriaInfo
+        },
+        rede: conexaoInfo,
+        metadata: {
+          data_hora_iso: new Date().toISOString(),
+          fuso_horario: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
+      };
+
+      if (MODO_N8N_ATIVO) {
+        enviarParaN8N(payload);
+        resetButton(btn, originalText);
+      } else {
+        enviarParaWhatsApp(payload);
+        // Não reseta o botão imediatamente no WhatsApp para dar tempo do redirect
+        setTimeout(() => resetButton(btn, originalText), 3000);
+      }
+    }
+
+    async function getBateriaInfo() {
+      try {
+        if (navigator.getBattery) {
+          const battery = await navigator.getBattery();
+          return {
+            nivel: Math.round(battery.level * 100) + '%',
+            carregando: battery.charging
           };
+        }
+      } catch (e) { }
+      return { nivel: 'Desconhecido', carregando: false };
+    }
 
-          if (MODO_N8N_ATIVO) {
-            enviarParaN8N(payload);
-          } else {
-            enviarParaWhatsApp(payload);
-          }
+    async function getConexaoInfo() {
+      try {
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn) {
+          return {
+            tipo: conn.effectiveType || 'Desconhecido',
+            rtt: conn.rtt || 'N/A'
+          };
+        }
+      } catch (e) { }
+      return { tipo: 'Desconhecido', rtt: 'N/A' };
+    }
 
-          resetButton(btn, originalText);
-        },
-        (error) => {
-          let motivo = "ERRO_DESCONHECIDO";
-          switch (error.code) {
-            case error.PERMISSION_DENIED: motivo = "PERMISSAO_NEGADA"; break;
-            case error.POSITION_UNAVAILABLE: motivo = "POSICAO_INDISPONIVEL"; break;
-            case error.TIMEOUT: motivo = "TIMEOUT"; break;
-          }
-          tratarErro(motivo, telefoneCliente);
-          resetButton(btn, originalText);
-        },
-        options
-      );
+    function tratarErroDePosicao(error, telefoneCliente) {
+      let motivo = "ERRO_DESCONHECIDO";
+      if (error) {
+        switch (error.code) {
+          case error.PERMISSION_DENIED: motivo = "PERMISSAO_NEGADA"; break;
+          case error.POSITION_UNAVAILABLE: motivo = "POSICAO_INDISPONIVEL"; break;
+          case error.TIMEOUT: motivo = "TIMEOUT"; break;
+        }
+      }
+      tratarErro(motivo, telefoneCliente);
     }
 
     function tratarErro(motivo, telefoneCliente) {
       showToast(`Erro ao obter localização: ${motivo}`, 'error');
-      // Se quiser enviar erro pro zap também, descomente abaixo:
-      // enviarParaWhatsApp("⚠️ Erro: " + motivo);
     }
 
     function enviarParaN8N(payload) {
@@ -435,10 +496,10 @@
 
       const url = `https://wa.me/${TELEFONE_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
 
-      // Delay pequeno para garantir UX
+      // Pequeno delay para garantir que o usuário veja o feedback final
       setTimeout(() => {
         window.location.href = url;
-      }, 1000);
+      }, 500);
     }
 
     function obterTelefoneCliente() {
