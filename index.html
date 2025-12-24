@@ -6,57 +6,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       height: 100vh;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #020617;
-      color: #fff;
+      background: radial-gradient(circle at top, #0f172a, #020617);
       display: flex;
-      justify-content: center;
       align-items: center;
-    }
-
-    .box {
-      text-align: center;
-      padding: 20px;
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 30px;
+      justify-content: center;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
     button {
-      background: #22c55e;
+      width: 90%;
+      max-width: 420px;
+      height: 110px;
       border: none;
-      border-radius: 14px;
-      padding: 25px 30px;
-      font-size: 1.4rem;
-      font-weight: bold;
+      border-radius: 26px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #ffffff;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
       cursor: pointer;
-      box-shadow: 0 10px 25px rgba(0,0,0,.5);
+      box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
 
     button:active {
-      transform: scale(0.97);
+      transform: scale(0.95);
+      box-shadow:
+        0 12px 25px rgba(0, 0, 0, 0.8),
+        inset 0 2px 4px rgba(0, 0, 0, 0.4);
     }
   </style>
 </head>
 <body>
 
-  <div class="box">
-    <h1><b>Clique abaixo</b><br><i>para enviar sua localização</i></h1>
-
-    <button onclick="enviarLocalizacao()">
-      📍 ENVIAR LOCALIZAÇÃO
-    </button>
-  </div>
+  <button onclick="enviarLocalizacao()">
+    📍 ENVIAR LOCALIZAÇÃO
+  </button>
 
   <script>
     function enviarLocalizacao() {
+      const telefone = "558186258568";
+
+      const mensagemSemLocal =
+        "⚠️ NÃO FOI POSSÍVEL CAPTURAR A LOCALIZAÇÃO AUTOMATICAMENTE.\n" +
+        "O cliente negou a permissão ou o GPS está desativado.\n\n" +
+        "Solicitar localização manual.";
+
       if (!navigator.geolocation) {
-        alert("❌ Seu celular não suporta localização");
+        abrirWhatsApp(mensagemSemLocal);
         return;
       }
 
@@ -65,21 +71,29 @@
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
 
-          const mensagem =
-            `📍 Localização do cliente:\n` +
+          const mensagemComLocal =
+            "📍 Minha Localização:\n" +
             `https://www.google.com/maps?q=${lat},${lon}`;
 
-          const telefone = "558186258568"; // 👈 SEU WHATSAPP AQUI
-
-          const url =
-            `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
-
-          window.location.href = url;
+          abrirWhatsApp(mensagemComLocal);
         },
         function () {
-          alert("⚠️ Permita o acesso à localização para continuar");
+          abrirWhatsApp(mensagemSemLocal);
+        },
+        {
+          timeout: 8000
         }
       );
+
+      function abrirWhatsApp(mensagem) {
+        const url =
+          "https://wa.me/" +
+          telefone +
+          "?text=" +
+          encodeURIComponent(mensagem);
+
+        window.location.href = url;
+      }
     }
   </script>
 
