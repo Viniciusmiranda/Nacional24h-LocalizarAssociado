@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Enviar Localização</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #020617;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .box {
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+    }
+
+    button {
+      background: #22c55e;
+      border: none;
+      border-radius: 14px;
+      padding: 25px 30px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(0,0,0,.5);
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="box">
+    <h1><b>Clique abaixo</b><br><i>para enviar sua localização</i></h1>
+
+    <button onclick="enviarLocalizacao()">
+      📍 ENVIAR LOCALIZAÇÃO
+    </button>
+  </div>
+
+  <script>
+    function enviarLocalizacao() {
+      if (!navigator.geolocation) {
+        alert("❌ Seu celular não suporta localização");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          const mensagem =
+            `📍 Localização do cliente:\n` +
+            `https://www.google.com/maps?q=${lat},${lon}`;
+
+          const telefone = "5581999999999"; // 👈 SEU WHATSAPP AQUI
+
+          const url =
+            `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+
+          window.location.href = url;
+        },
+        function () {
+          alert("⚠️ Permita o acesso à localização para continuar");
+        }
+      );
+    }
+  </script>
+
+</body>
+</html>
