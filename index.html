@@ -494,7 +494,7 @@
         `📡 Conexão: ${net.tipo}\n` +
         `📱 Sistema: ${dev.sistema}`;
 
-      const url = `https://api.whatsapp.com/send?phone=${TELEFONE_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
+      const url = `https://web.whatsapp.com/send?phone=${TELEFONE_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
 
       // Pequeno delay para garantir que o usuário veja o feedback final
       setTimeout(() => {
