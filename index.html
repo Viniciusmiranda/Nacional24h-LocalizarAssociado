@@ -206,52 +206,96 @@
   </div>
 
   <script>
-    function enviarLocalizacao() {
-      const telefone = "558186258568";
-      const btn = document.getElementById('btnEnviar');
-      
-      btn.classList.add('loading');
+  // 🔑 CONTROLE GERAL
+  const MODO_N8N_ATIVO = true; // true = envia JSON | false = WhatsApp direto
+  const N8N_WEBHOOK_URL = "https://SEU-N8N/webhook/localizacao";
+  const TELEFONE_WHATSAPP = "558186258568";
 
-      const mensagemSemLocal =
-        "⚠️ NÃO FOI POSSÍVEL CAPTURAR A LOCALIZAÇÃO AUTOMATICAMENTE.\n" +
-        "O cliente negou a permissão ou o GPS está desativado.\n\n" +
-        "Solicitar localização manual.";
+  function enviarLocalizacao() {
+    const btn = document.getElementById('btnEnviar');
+    btn.classList.add('loading');
 
-      if (!navigator.geolocation) {
-        abrirWhatsApp(mensagemSemLocal);
-        return;
-      }
+    const telefoneCliente = obterTelefoneCliente();
 
-      navigator.geolocation.getCurrentPosition(
-        function (position) {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-
-          const mensagemComLocal =
-            "📍 Localização do cliente:\n" +
-            `https://www.google.com/maps?q=${lat},${lon}`;
-
-          abrirWhatsApp(mensagemComLocal);
-        },
-        function () {
-          abrirWhatsApp(mensagemSemLocal);
-        },
-        {
-          timeout: 8000
-        }
-      );
-
-      function abrirWhatsApp(mensagem) {
-        const url =
-          "https://wa.me/" +
-          telefone +
-          "?text=" +
-          encodeURIComponent(mensagem);
-
-        window.location.href = url;
-      }
+    if (!navigator.geolocation) {
+      tratarSemLocalizacao("NAVEGADOR_NAO_SUPORTA", telefoneCliente);
+      return;
     }
-  </script>
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const payload = {
+          telefone_cliente: telefoneCliente,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          maps_url: `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`,
+          gps_autorizado: true,
+          user_agent: navigator.userAgent,
+          data_hora: new Date().toISOString()
+        };
+
+        MODO_N8N_ATIVO
+          ? enviarParaN8N(payload)
+          : enviarParaWhatsApp(payload.maps_url);
+      },
+      () => {
+        tratarSemLocalizacao("PERMISSAO_NEGADA", telefoneCliente);
+      },
+      { timeout: 8000 }
+    );
+  }
+
+  function tratarSemLocalizacao(motivo, telefoneCliente) {
+    const payload = {
+      telefone_cliente: telefoneCliente,
+      gps_autorizado: false,
+      motivo,
+      user_agent: navigator.userAgent,
+      data_hora: new Date().toISOString()
+    };
+
+    MODO_N8N_ATIVO
+      ? enviarParaN8N(payload)
+      : enviarParaWhatsApp("⚠️ Cliente não autorizou o GPS.");
+  }
+
+  function enviarParaN8N(payload) {
+    fetch(N8N_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(() => {
+      alert("✅ Localização enviada com sucesso");
+    })
+    .catch(() => {
+      // fallback automático 😈
+      enviarParaWhatsApp("⚠️ Falha ao enviar localização automática.");
+    });
+  }
+
+  function enviarParaWhatsApp(texto) {
+    const mensagem =
+      "📍 LOCALIZAÇÃO DO CLIENTE:\n\n" +
+      texto;
+
+    const url =
+      "https://wa.me/" +
+      TELEFONE_WHATSAPP +
+      "?text=" +
+      encodeURIComponent(mensagem);
+
+    window.location.href = url;
+  }
+
+  function obterTelefoneCliente() {
+    // 🔥 opções:
+    // 1️⃣ pegar de querystring
+    // 2️⃣ pegar de cookie
+    // 3️⃣ fixo temporário
+    return "CLIENTE_DESCONHECIDO";
+  }
+</script>
 
 </body>
 </html>
