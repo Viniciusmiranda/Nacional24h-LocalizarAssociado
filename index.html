@@ -34,7 +34,7 @@
       align-items: center;
       justify-content: center;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 20px;#000390
+      padding: 20px;
       position: relative;
       overflow: hidden;
       perspective: 1200px;
@@ -347,10 +347,10 @@
       max-width: 420px;
       height: 90px;
       /* Mais alto */
-      border: none;
-      border-radius: 25px;
+      border: 2px solid #ffffff;
+      border-radius: 200px;
       /* Gradiente mais rico */
-      background: linear-gradient(135deg, #000390 0%, #000390 100%);
+      background: linear-gradient(135deg, #2b1da7 0%, #000390 100%);
       color: var(--primary);
       font-size: 1.8rem;
       /* Fonte maior */
@@ -429,6 +429,22 @@
 
     .toast.error {
       border-left: 5px solid red;
+    }
+
+    .logo-top {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 180px;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+      z-index: 20;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .logo-top.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
   </style>
   <style>
@@ -520,6 +536,8 @@
   <!-- CENÁRIO 3D CSS -->
   <div class="stars"></div>
 
+  <img src="nacional.png" alt="Logo Nacional" class="logo-top">
+
   <div class="earth-img-container">
     <img src="terra2_minKb.png" alt="Planeta Terra" class="earth-img">
   </div>
@@ -574,6 +592,7 @@
       // --- INÍCIO DA ANIMAÇÃO (IMEDIATO) ---
       // 1. Esconde a UI (Botão e ícone somem)
       uiContainer.classList.add('ui-hidden');
+      document.querySelector('.logo-top').classList.add('hidden'); // Esconde o logo também
 
       // 2. EFEITOS ESPECIAIS (SHAKE, WARP)
       // Flash removido
