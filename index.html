@@ -3,11 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>🟦NA | 24h</title>
+  <title>NA | 24h</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <meta property="og:type" content="website">
-  <meta property="og:title" content="🟦Nacional Assistência 24h">
+  <meta property="og:title" content="🟦Nacional Assistência 24h®">
   <meta property="og:description" content="Clique para enviar sua localização atual com precisão.">
   <meta property="og:image"
     content="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/1200px-Google_Maps_icon_%282020%29.svg.png">
@@ -113,7 +113,7 @@
     }
 
     .earth-img-container.zoom-active {
-      transform: translate(-50%, -50%) scale(3.5);
+      transform: translate(-10%, -10%) scale(3.5);
       /* Efeito de aproximação forte */
     }
 
@@ -122,7 +122,7 @@
       height: 100%;
       object-fit: cover;
       border-radius: 50%;
-      animation: visualRotation 120s linear infinite;
+      animation: visualRotation 20s linear infinite;
     }
 
     @keyframes visualRotation {
@@ -654,8 +654,8 @@
     /* Terra: Zoom Infinito (Visualmente contínuo) */
     .earth-img-container {
       /* ... */
-      transition: transform 60s cubic-bezier(0.5, 0, 0.5, 1) !important;
-      /* Lento e contínuo */
+      transition: transform 3s cubic-bezier(0.5, 0, 0.5, 1) !important;
+      /* Rápido e intenso */
     }
 
     .earth-img-container.zoom-active {
@@ -714,10 +714,11 @@
   </div>
 
   <div class="footer">
-    <span>v.1.9 | Desenvolvido por</span>
+    <span>© 2026 v.1.9 | Desenvolvido por</span>
     <a href="https://www.instagram.com/atomossolucaoegestao/" target="_blank">
       <img src="atomos.png" alt="Átomos">
     </a>
+    <span>®</span>
   </div>
 
   <!-- MODAL DE PERGUNTA -->
@@ -738,6 +739,9 @@
     const TEMPO_CALIBRAGEM_MS = 8000;
 
     async function enviarLocalizacao() {
+      // Feedback tátil
+      if (navigator.vibrate) navigator.vibrate(200);
+
       // Abre o modal em vez de iniciar direto
       document.getElementById('modalVeiculo').classList.add('active');
     }
