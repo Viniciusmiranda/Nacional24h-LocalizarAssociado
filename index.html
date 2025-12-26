@@ -146,6 +146,12 @@
       animation: systemTilt 25s ease-in-out infinite alternate;
       z-index: 2;
       /* Camada superior para interatividade 3D */
+      transition: opacity 1s ease-out;
+    }
+
+    .orbit-system.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     @keyframes systemTilt {
@@ -437,12 +443,118 @@
       left: 50%;
       transform: translateX(-50%);
       max-width: 180px;
+      z-index: 20;
+      transition: opacity 0.5s ease-out;
+      display: block;
+      /* Importante para o link funcionar */
+      cursor: pointer;
+    }
+
+    .logo-top img {
+      width: 100%;
+      display: block;
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+    }
+
+    .logo-top.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Modal de Pergunta */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+      color: white;
+      max-width: 90%;
+      width: 400px;
+    }
+
+    .modal-content h2 {
+      margin-bottom: 30px;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .btn-modal {
+      padding: 15px 30px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+      flex: 1;
+    }
+
+    .btn-sim {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-nao {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-modal:active {
+      transform: scale(0.95);
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.8rem;
       z-index: 20;
       transition: opacity 0.5s ease-out;
     }
 
-    .logo-top.hidden {
+    .footer img {
+      width: 80px;
+      /* Ajuste conforme necessário */
+      margin-top: 5px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
+
+    .footer.hidden {
       opacity: 0;
       pointer-events: none;
     }
@@ -536,7 +648,9 @@
   <!-- CENÁRIO 3D CSS -->
   <div class="stars"></div>
 
-  <img src="nacional.png" alt="Logo Nacional" class="logo-top">
+  <a href="https://www.instagram.com/nacionalassistencia24h/" target="_blank" class="logo-top">
+    <img src="nacional.png" alt="Logo Nacional">
+  </a>
 
   <div class="earth-img-container">
     <img src="terra2_minKb.png" alt="Planeta Terra" class="earth-img">
@@ -574,6 +688,24 @@
     </button>
   </div>
 
+  <div class="footer">
+    <span>Desenvolvido por</span>
+    <a href="https://www.instagram.com/atomossolucaoegestao/" target="_blank">
+      <img src="atomos.png" alt="Átomos">
+    </a>
+  </div>
+
+  <!-- MODAL DE PERGUNTA -->
+  <div class="modal-overlay" id="modalVeiculo">
+    <div class="modal-content">
+      <h2>Você está próximo ao veículo?</h2>
+      <div class="modal-buttons">
+        <button class="btn-modal btn-sim" onclick="respostaVeiculo('SIM')">SIM</button>
+        <button class="btn-modal btn-nao" onclick="respostaVeiculo('NÃO')">NÃO</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const MODO_N8N_ATIVO = false;
     const N8N_WEBHOOK_URL = "https://SEU-N8N/webhook/localizacao";
@@ -581,6 +713,16 @@
     const TEMPO_CALIBRAGEM_MS = 8000;
 
     async function enviarLocalizacao() {
+      // Abre o modal em vez de iniciar direto
+      document.getElementById('modalVeiculo').classList.add('active');
+    }
+
+    async function respostaVeiculo(resposta) {
+      document.getElementById('modalVeiculo').classList.remove('active');
+      iniciarCaptura(resposta);
+    }
+
+    async function iniciarCaptura(proximoVeiculo) {
       const btn = document.getElementById('btnEnviar');
       const earthContainer = document.querySelector('.earth-img-container');
       const uiContainer = document.querySelector('.container');
@@ -592,7 +734,9 @@
       // --- INÍCIO DA ANIMAÇÃO (IMEDIATO) ---
       // 1. Esconde a UI (Botão e ícone somem)
       uiContainer.classList.add('ui-hidden');
-      document.querySelector('.logo-top').classList.add('hidden'); // Esconde o logo também
+      document.querySelector('.logo-top').classList.add('hidden'); // Esconde o logo
+      document.querySelector('.orbit-system').classList.add('hidden'); // Esconde satélites
+      document.querySelector('.footer').classList.add('hidden'); // Esconde rodapé
 
       // 2. EFEITOS ESPECIAIS (SHAKE, WARP)
       // Flash removido
@@ -654,10 +798,10 @@
         if (watchId !== null) navigator.geolocation.clearWatch(watchId);
 
         if (melhorPosicao) {
-          processarEnvio(melhorPosicao, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText);
+          processarEnvio(melhorPosicao, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText, proximoVeiculo);
         } else {
           navigator.geolocation.getCurrentPosition(
-            (pos) => processarEnvio(pos, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText),
+            (pos) => processarEnvio(pos, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText, proximoVeiculo),
             (err) => {
               tratarErroDePosicao(err, telefoneCliente);
               resetButton(btn, originalText);
@@ -671,11 +815,12 @@
       }
     }
 
-    function processarEnvio(position, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText) {
+    function processarEnvio(position, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText, proximoVeiculo) {
       const payload = {
         cliente: {
           telefone: telefoneCliente,
-          origem_url: window.location.href
+          origem_url: window.location.href,
+          proximo_veiculo: proximoVeiculo
         },
         localizacao: {
           latitude: position.coords.latitude,
@@ -767,6 +912,7 @@
       const mensagem =
         `*📍MINHA LOCALIZAÇÃO*\n\n` +
         `🔗 *Maps*: ${loc.link_maps}\n\n` +
+        `🚗 *Próximo ao Veículo*: *${payload.cliente.proximo_veiculo}*\n` +
         `-----------Infos------------\n` +
         `🔋 Bateria: *${dev.bateria.nivel}*\n` +
         `🎯 Precisão: *${loc.precisao_metros}m*\n` +
