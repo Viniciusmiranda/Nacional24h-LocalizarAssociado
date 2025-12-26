@@ -3,11 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>NA | 24h</title>
+  <title>🟦NA | 24h</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Nacional Assistência 24h">
+  <meta property="og:title" content="🟦Nacional Assistência 24h">
   <meta property="og:description" content="Clique para enviar sua localização atual com precisão.">
   <meta property="og:image"
     content="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Google_Maps_icon_%282020%29.svg/1200px-Google_Maps_icon_%282020%29.svg.png">
@@ -534,7 +534,7 @@
     }
 
     .footer {
-      position: absolute;
+      position: fixed;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
@@ -543,7 +543,7 @@
       align-items: center;
       color: rgba(255, 255, 255, 0.6);
       font-size: 0.8rem;
-      z-index: 20;
+      z-index: 100;
       transition: opacity 0.5s ease-out;
     }
 
@@ -557,6 +557,31 @@
     .footer.hidden {
       opacity: 0;
       pointer-events: none;
+    }
+
+    /* Media Queries para Mobile */
+    @media (max-width: 480px) {
+      body {
+        /* Garante que o conteúdo não fique escondido pelas barras do navegador */
+        min-height: -webkit-fill-available;
+      }
+
+      .footer {
+        width: 100%;
+        bottom: 10px;
+        z-index: 999;
+        /* Garante prioridade máxima */
+      }
+
+      .earth-img-container {
+        width: 350px;
+        height: 350px;
+      }
+
+      .btn-modal {
+        padding: 12px 20px;
+        font-size: 1rem;
+      }
     }
   </style>
   <style>
