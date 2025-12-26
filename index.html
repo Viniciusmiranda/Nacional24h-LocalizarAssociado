@@ -94,33 +94,38 @@
       }
     }
 
-    /* TERRA 3D SKETCHFAB */
-    .earth-3d-model {
+    /* TERRA PNG */
+    .earth-img-container {
       position: absolute;
       top: 50%;
       left: 50%;
       width: 450px;
       height: 450px;
       transform: translate(-50%, -50%);
-      z-index: 1;
-      /* Atrás dos satélites (que estarão com z-index maior ou preserve-3d) */
+      z-index: 0;
+      /* Permitir que satélites passem na frente */
       border-radius: 50%;
-      overflow: hidden;
-      /* Cortar cantos do iframe se necessário */
-      pointer-events: none;
-      /* Deixar interação passar se necessário, ou auto para girar */
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    .sketchfab-embed-wrapper {
+    .earth-img {
       width: 100%;
       height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      animation: visualRotation 120s linear infinite;
     }
 
-    .sketchfab-embed-wrapper iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      filter: contrast(1.1) saturate(1.2);
+    @keyframes visualRotation {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     /* --- SISTEMA DE SATÉLITES REALISTA --- */
@@ -132,6 +137,8 @@
       height: 0;
       transform-style: preserve-3d;
       animation: systemTilt 25s ease-in-out infinite alternate;
+      z-index: 2;
+      /* Camada superior para interatividade 3D */
     }
 
     @keyframes systemTilt {
@@ -144,13 +151,12 @@
       }
     }
 
-    /* Caminhos Orbitais (Linhas Sutis - REMOVIDAS VISUALMENTE) */
+    /* Caminhos Orbitais (Invisíveis) */
     .orbit-path {
       position: absolute;
       top: 50%;
       left: 50%;
       border: none;
-      /* REMOVIDO BORDA BRANCA */
       border-radius: 50%;
       transform-style: preserve-3d;
     }
@@ -176,58 +182,48 @@
       transform: rotateX(70deg) rotateY(-60deg);
     }
 
-    /* Satélite Hardware (GPS Block III) */
+    /* Satélite (Menor e mais delicado) */
     .satellite-box {
       position: absolute;
       top: 0;
       left: 50%;
-      width: 24px;
-      height: 24px;
-      /* Corpo Dourado (Gold Foil Insulation) */
-      background: radial-gradient(circle at 30% 30%, #c0beb5, #fafafa);
-      margin-left: -12px;
-      margin-top: -12px;
+      width: 12px;
+      height: 12px;
+      background: radial-gradient(circle at 30% 30%, #fff, #ccc);
+      margin-left: -6px;
+      margin-top: -6px;
       transform-style: preserve-3d;
-      box-shadow:
-        0 0 5px rgba(199, 198, 211, 0.8),
-        /* Brilho Dourado */
-        inset 0 0 4px rgba(0, 0, 0, 0.5);
-      border-radius: 4px;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+      border-radius: 2px;
       animation: orbitMove 10s linear infinite;
     }
 
-    /* Painéis solares Realistas (Azul Escuro com Grid) */
+    /* Painéis solares (Ajustados para o tamanho menor) */
     .satellite-box::before,
     .satellite-box::after {
       content: '';
       position: absolute;
-      top: 4px;
-      width: 45px;
-      height: 16px;
-      /* Painel Fotovoltaico Azul Profundo com Grid */
-      background:
-        repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255, 255, 255, 0.1) 11px),
-        repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255, 255, 255, 0.1) 5px),
-        linear-gradient(to bottom, #102040, #050a14);
-      border: 1px solid #444;
+      top: 2px;
+      width: 24px;
+      height: 8px;
+      background: linear-gradient(to bottom, #102040, #050a14);
+      border: 1px solid #555;
       box-shadow: 0 0 2px rgba(100, 200, 255, 0.3);
     }
 
     .satellite-box::before {
-      left: -46px;
+      left: -26px;
       transform-origin: right center;
       transform: rotateY(15deg);
     }
 
     .satellite-box::after {
-      right: -46px;
+      right: -26px;
       transform-origin: left center;
       transform: rotateY(-15deg);
     }
 
-    /* Antena (Ponto central - REMOVIDO POIS USUARIO TIROU NO HTML) */
-
-    /* Ajustes específicos de órbita */
+    /* Ajustes de órbita */
     .sat-1 {
       animation: orbit1 20s linear infinite;
     }
@@ -271,14 +267,12 @@
     }
 
     /* --- UI PRINCIPAL (Mantida) --- */
-
     .container {
       text-align: center;
       z-index: 10;
       width: 100%;
       max-width: 500px;
       animation: fadeInUp 1s ease-out;
-      /* Garantir centralização absoluta */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -330,34 +324,43 @@
     .icon-circle svg {
       width: 50px;
       height: 50px;
-      fill: white;
+      fill: #ff4b4b;
     }
 
-    /* Botão Principal */
+    /* Botão Principal Premium */
     button {
       width: 100%;
       max-width: 420px;
-      height: 80px;
+      height: 90px;
+      /* Mais alto */
       border: none;
-      border-radius: 20px;
-      background: linear-gradient(145deg, #ffffff, #e0e0e0);
+      border-radius: 25px;
+      /* Gradiente mais rico */
+      background: linear-gradient(135deg, #ffffff 0%, #d0d0d0 100%);
       color: var(--primary);
-      font-size: 1.4rem;
-      font-weight: 800;
-      font-family: 'Arial Black', sans-serif;
+      font-size: 1.8rem;
+      /* Fonte maior */
+      font-weight: 900;
+      font-family: 'Montserrat', 'Arial Black', sans-serif;
       text-transform: uppercase;
       cursor: pointer;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      transition: all 0.3s;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), inset 0 2px 2px rgba(255, 255, 255, 0.8);
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
       z-index: 20;
+      letter-spacing: 1px;
+    }
+
+    button:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      background: linear-gradient(135deg, #ffffff 0%, #eeeeee 100%);
     }
 
     button:active {
-      transform: scale(0.96);
+      transform: scale(0.98);
     }
 
     button.loading {
@@ -365,9 +368,7 @@
       pointer-events: none;
     }
 
-    button.loading .button-icon {
-      display: none;
-    }
+    /* Removemos o .button-icon antigo */
 
     button.loading::after {
       content: '';
@@ -423,12 +424,8 @@
   <!-- CENÁRIO 3D CSS -->
   <div class="stars"></div>
 
-  <div class="earth-3d-model">
-    <div class="sketchfab-embed-wrapper"> <iframe title="Mundo em 3D - Planeta Terra" frameborder="0" allowfullscreen
-        mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking"
-        xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share
-        src="https://sketchfab.com/models/7ca4c655a971408d85df16d621cc8506/embed?autostart=1&ui_controls=0&ui_infos=0&ui_inspector=0&ui_stop=0&ui_watermark=1&ui_hint=0&transparent=1">
-      </iframe> </div>
+  <div class="earth-img-container">
+    <img src="terra.png" alt="Planeta Terra" class="earth-img">
   </div>
 
   <div class="orbit-system">
@@ -458,7 +455,7 @@
     </div>
 
     <button id="btnEnviar" onclick="enviarLocalizacao()">
-      <span class="button-icon">📍</span>
+
       <span>ENVIAR LOCALIZAÇÃO</span>
     </button>
   </div>
