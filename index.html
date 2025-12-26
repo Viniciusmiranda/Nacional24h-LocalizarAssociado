@@ -108,6 +108,13 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      transition: transform 5s ease-in-out;
+      /* Preparar para o zoom */
+    }
+
+    .earth-img-container.zoom-active {
+      transform: translate(-50%, -50%) scale(3.5);
+      /* Efeito de aproximação forte */
     }
 
     .earth-img {
@@ -277,6 +284,13 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      transition: opacity 0.5s ease-out;
+      /* Transição suave para sumir */
+    }
+
+    .container.ui-hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     @keyframes fadeInUp {
@@ -417,10 +431,92 @@
       border-left: 5px solid red;
     }
   </style>
+  <style>
+    /* ... existing CSS ... */
+
+    /* EFEITOS VISUAIS EXTREMOS */
+    .flash-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: white;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-out;
+    }
+
+    .flash-overlay.active {
+      animation: flashBang 1.5s ease-out forwards;
+    }
+
+    @keyframes flashBang {
+      0% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0;
+      }
+    }
+
+    body.shaking {
+      animation: shakeScreen 0.5s ease-in-out infinite;
+    }
+
+    @keyframes shakeScreen {
+      0% {
+        transform: translate(0, 0);
+      }
+
+      25% {
+        transform: translate(2px, 2px);
+      }
+
+      50% {
+        transform: translate(-2px, -2px);
+      }
+
+      75% {
+        transform: translate(2px, -2px);
+      }
+
+      100% {
+        transform: translate(0, 0);
+      }
+    }
+
+    /* Modificando Estrelas para WARP SPEED (Infinito) */
+    .stars {
+      transition: transform 60s linear, opacity 8s;
+    }
+
+    .stars.warp {
+      transform: scale(20) rotate(20deg);
+      opacity: 0.8;
+    }
+
+    /* Terra: Zoom Infinito (Visualmente contínuo) */
+    .earth-img-container {
+      /* ... */
+      transition: transform 60s cubic-bezier(0.5, 0, 0.5, 1) !important;
+      /* Lento e contínuo */
+    }
+
+    .earth-img-container.zoom-active {
+      transform: translate(-50%, -50%) scale(50) !important;
+      /* Zoom MASSIVO */
+    }
+
+    /* ... rest of CSS ... */
+  </style>
 </head>
 
 <body>
-
+  <!-- EFEITOS -->
+  <!-- Flash Removido -->
   <!-- CENÁRIO 3D CSS -->
   <div class="stars"></div>
 
@@ -464,15 +560,33 @@
     const MODO_N8N_ATIVO = false;
     const N8N_WEBHOOK_URL = "https://SEU-N8N/webhook/localizacao";
     const TELEFONE_WHATSAPP = "558186258568";
-    const TEMPO_CALIBRAGEM_MS = 5000;
+    const TEMPO_CALIBRAGEM_MS = 8000;
 
     async function enviarLocalizacao() {
       const btn = document.getElementById('btnEnviar');
-      const btnText = btn.querySelector('span:last-child');
+      const earthContainer = document.querySelector('.earth-img-container');
+      const uiContainer = document.querySelector('.container');
       const originalText = "ENVIAR LOCALIZAÇÃO";
 
       if (btn.classList.contains('loading')) return;
       btn.classList.add('loading');
+
+      // --- INÍCIO DA ANIMAÇÃO (IMEDIATO) ---
+      // 1. Esconde a UI (Botão e ícone somem)
+      uiContainer.classList.add('ui-hidden');
+
+      // 2. EFEITOS ESPECIAIS (SHAKE, WARP)
+      // Flash removido
+      document.querySelector('.stars').classList.add('warp'); // Estrelas estouram
+      document.body.classList.add('shaking'); // Tela treme
+
+      // Remove o tremor (shake) após 1.5s para não enjoar
+      setTimeout(() => document.body.classList.remove('shaking'), 1500);
+
+      // 3. Terra se aproxima (Zoom Agressivo)
+      earthContainer.classList.add('zoom-active');
+
+      btn.querySelector('span').style.display = 'none';
 
       const telefoneCliente = obterTelefoneCliente();
 
