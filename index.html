@@ -654,7 +654,7 @@
     /* Terra: Zoom Infinito (Visualmente contínuo) */
     .earth-img-container {
       /* ... */
-      transition: transform 3s cubic-bezier(0.5, 0, 0.5, 1) !important;
+      transition: transform 1s cubic-bezier(0.5, 0, 0.5, 1) !important;
       /* Rápido e intenso */
     }
 
@@ -678,7 +678,7 @@
   </a>
 
   <div class="earth-img-container">
-    <img src="terra2_minKb.png" alt="Planeta Terra" class="earth-img">
+    <img src="terra_1MB.png" alt="Planeta Terra" class="earth-img">
   </div>
 
   <div class="orbit-system">
@@ -714,10 +714,11 @@
   </div>
 
   <div class="footer">
-    <span>© 2026 v.1.9 | Desenvolvido pela equipe Átomos®</span>
+    <span>© 2026 v.1.9 | Desenvolvido por</span>
     <a href="https://www.instagram.com/atomossolucaoegestao/" target="_blank">
       <img src="atomos.png" alt="Átomos">
     </a>
+    <span>®</span>
   </div>
 
   <!-- MODAL DE PERGUNTA -->
@@ -735,7 +736,7 @@
     const MODO_N8N_ATIVO = false;
     const N8N_WEBHOOK_URL = "https://SEU-N8N/webhook/localizacao";
     const TELEFONE_WHATSAPP = "558186258568";
-    const TEMPO_CALIBRAGEM_MS = 8000;
+    const TEMPO_CALIBRAGEM_MS = 3000;
 
     async function enviarLocalizacao() {
       // Feedback tátil
