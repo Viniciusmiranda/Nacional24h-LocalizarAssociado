@@ -57,7 +57,12 @@
         radial-gradient(1px 1px at 30% 80%, #fff, transparent),
         radial-gradient(1.5px 1.5px at 50% 50%, #fff, transparent),
         radial-gradient(1px 1px at 70% 10%, #fff, transparent),
-        radial-gradient(2px 2px at 90% 90%, #fff, transparent);
+        radial-gradient(2px 2px at 90% 90%, #fff, transparent),
+        radial-gradient(1px 1px at 15% 45%, #fff, transparent),
+        radial-gradient(1.2px 1.2px at 45% 15%, #fff, transparent),
+        radial-gradient(1px 1px at 65% 65%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 85% 25%, #fff, transparent),
+        radial-gradient(1px 1px at 25% 75%, #fff, transparent);
       opacity: 0.9;
     }
 
@@ -66,7 +71,10 @@
       background-image:
         radial-gradient(0.8px 0.8px at 15% 40%, #ffffff90, transparent),
         radial-gradient(1px 1px at 60% 70%, #ffffff90, transparent),
-        radial-gradient(0.8px 0.8px at 80% 30%, #ffffff90, transparent);
+        radial-gradient(0.8px 0.8px at 80% 30%, #ffffff90, transparent),
+        radial-gradient(0.8px 0.8px at 20% 85%, #ffffff90, transparent),
+        radial-gradient(0.9px 0.9px at 40% 20%, #ffffff90, transparent),
+        radial-gradient(0.8px 0.8px at 90% 50%, #ffffff90, transparent);
       animation-duration: 10s;
       opacity: 0.6;
     }
@@ -76,7 +84,10 @@
       background-image:
         radial-gradient(0.5px 0.5px at 20% 10%, #ffffff60, transparent),
         radial-gradient(0.5px 0.5px at 40% 90%, #ffffff60, transparent),
-        radial-gradient(0.5px 0.5px at 75% 60%, #ffffff60, transparent);
+        radial-gradient(0.5px 0.5px at 75% 60%, #ffffff60, transparent),
+        radial-gradient(0.5px 0.5px at 10% 60%, #ffffff60, transparent),
+        radial-gradient(0.5px 0.5px at 50% 30%, #ffffff60, transparent),
+        radial-gradient(0.5px 0.5px at 85% 85%, #ffffff60, transparent);
       animation-duration: 14s;
       opacity: 0.4;
     }
@@ -548,7 +559,7 @@
     }
 
     .footer img {
-      width: 80px;
+      width: 70px;
       /* Ajuste conforme necessário */
       margin-top: 5px;
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
@@ -654,7 +665,7 @@
     /* Terra: Zoom Infinito (Visualmente contínuo) */
     .earth-img-container {
       /* ... */
-      transition: transform 1s cubic-bezier(0.5, 0, 0.5, 1) !important;
+      transition: transform 60s cubic-bezier(0.5, 0, 0.5, 1) !important;
       /* Rápido e intenso */
     }
 
@@ -714,11 +725,11 @@
   </div>
 
   <div class="footer">
-    <span>© 2026 v.2.0 | Desenvolvido por</span>
-    <a href="https://www.instagram.com/atomossolucaoegestao/" target="_blank">
-      <img src="atomos.png" alt="Átomos">
-    </a>
-    <span>®</span>
+    <span>©Localizar Associado | 2026 v.2.0 | Desenvolvido pela
+      <a href="https://www.instagram.com/atomossolucaoegestao/" target="_blank">
+        <img src="atomos.png" alt="Átomos">
+      </a>®
+    </span>
   </div>
 
   <!-- MODAL DE PERGUNTA -->
@@ -733,8 +744,9 @@
   </div>
 
   <script>
-    const MODO_N8N_ATIVO = false;
-    const N8N_WEBHOOK_URL = "https://SEU-N8N/webhook/localizacao";
+    const ATIVAR_WEBHOOK_N8N = true;
+    const ATIVAR_WHATSAPP_LINK = true;
+    const N8N_WEBHOOK_URL = "https://hookworkflowrabbit.cleoia.com.br/webhook/7f4b8445-554d-40a0-9146-2e9280d910bc";
     const TELEFONE_WHATSAPP = "558186258568";
     const TEMPO_CALIBRAGEM_MS = 3000;
 
@@ -844,7 +856,27 @@
       }
     }
 
-    function processarEnvio(position, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText, proximoVeiculo) {
+    async function processarEnvio(position, telefoneCliente, bateriaInfo, conexaoInfo, btn, originalText, proximoVeiculo) {
+      // 1. Tenta obter a cidade e estado (Reverse Geocoding Client-Side)
+      let cidadeInfo = "Não identificado";
+      let estadoInfo = "Não identificado";
+      try {
+        const resp = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=pt`
+        );
+        const data = await resp.json();
+        // Separar Cidade e Estado
+        if (data.city) cidadeInfo = data.city;
+        else if (data.locality) cidadeInfo = data.locality;
+
+        if (data.principalSubdivision) estadoInfo = data.principalSubdivision;
+
+      } catch (e) {
+        console.warn("Erro ao buscar cidade/estado:", e);
+      }
+
+      const dataAtual = new Date(); // Obter data/hora atual
+
       const payload = {
         cliente: {
           telefone: telefoneCliente,
@@ -854,6 +886,8 @@
         localizacao: {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
+          cidade: cidadeInfo, // CAMPO SEPARADO
+          estado: estadoInfo, // NOVO CAMPO SEPARADO
           precisao_metros: position.coords.accuracy ? Math.round(position.coords.accuracy) : 'N/A',
           altitude_metros: position.coords.altitude,
           velocidade_kmh: position.coords.speed ? (position.coords.speed * 3.6).toFixed(1) : 0,
@@ -867,17 +901,32 @@
           bateria: bateriaInfo
         },
         rede: conexaoInfo,
+        config: {
+          whatsapp_central: TELEFONE_WHATSAPP // NOVO CAMPO
+        },
         metadata: {
-          data_hora_iso: new Date().toISOString()
+          data_hora_iso: dataAtual.toISOString(),
+          data: dataAtual.toLocaleDateString('pt-BR'), // DATA SEPARADA
+          hora: dataAtual.toLocaleTimeString('pt-BR')  // HORA SEPARADA
         }
       };
 
-      if (MODO_N8N_ATIVO) {
-        enviarParaN8N(payload);
-        resetButton(btn, originalText);
-      } else {
+      if (ATIVAR_WEBHOOK_N8N) {
+        // Modo Sincronizado: Espera confirmação do N8N para abrir WhatsApp
+        enviarParaN8N(payload).then((sucesso) => {
+          if (sucesso && ATIVAR_WHATSAPP_LINK) {
+            enviarParaWhatsApp(payload);
+          } else if (!sucesso) {
+            showToast("❌ Servidor não confirmou recebimento.", 'error');
+            resetButton(btn, originalText);
+          }
+        });
+      } else if (ATIVAR_WHATSAPP_LINK) {
+        // Modo Direto: Apenas WhatsApp
         enviarParaWhatsApp(payload);
         setTimeout(() => resetButton(btn, originalText), 3000);
+      } else {
+        resetButton(btn, originalText);
       }
     }
 
@@ -924,13 +973,59 @@
     }
 
     function enviarParaN8N(payload) {
-      fetch(N8N_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+      console.log("Enviando para N8N (GET):", payload);
+
+      // Achatar o objeto para Query String (simples)
+      const params = new URLSearchParams();
+
+      // Flatten básico manual para os principais campos
+      params.append('telefone', payload.cliente.telefone);
+      params.append('lat', payload.localizacao.latitude);
+      params.append('lng', payload.localizacao.longitude);
+      params.append('precisao', payload.localizacao.precisao_metros);
+      params.append('bateria', payload.dispositivo.bateria.nivel);
+      params.append('sistema', payload.dispositivo.sistema);
+      params.append('link_maps', payload.localizacao.link_maps);
+      params.append('proximo_veiculo', payload.cliente.proximo_veiculo);
+      params.append('cidade', payload.localizacao.cidade || "N/A");
+      params.append('estado', payload.localizacao.estado || "N/A");
+      params.append('whatsapp_central', payload.config.whatsapp_central);
+      params.append('data', payload.metadata.data); // NOVO PARAMETRO
+      params.append('hora', payload.metadata.hora); // NOVO PARAMETRO
+
+      // Adicionar o JSON completo também caso o N8N queira processar tudo
+      params.append('full_json', JSON.stringify(payload));
+
+      const urlComParams = `${N8N_WEBHOOK_URL}?${params.toString()}`;
+
+      // Retorna uma Promise para encadear
+      return fetch(urlComParams, {
+        method: "GET",
+        // mode: 'no-cors' REMOVIDO: Precisamos validar a resposta
       })
-        .then(() => showToast("✅ Localização enviada com sucesso!", 'success'))
-        .catch(() => showToast("❌ Falha no envio automático.", 'error'));
+        .then((response) => {
+          // Nota: Ler headers customizados (ex: 'Status') exige 'Access-Control-Expose-Headers' no servidor.
+          // Se o navegador esconder o header, validamos pelo menos o status 200 OK.
+          const statusHeader = response.headers.get("Status");
+          console.log("Status Fetch:", response.status, "Header 'Status':", statusHeader);
+
+          if (response.ok) {
+            if (statusHeader && statusHeader !== "Recebido") {
+              console.warn("Aviso: Header 'Status' diferente de 'Recebido'.");
+              // Opcional: Retornar false se quiser ser estrito ao extremo.
+              // return false; 
+            }
+            showToast("✅ Recebido pelo Servidor!", 'success');
+            return true;
+          } else {
+            throw new Error(`Servidor respondeu com erro ${response.status}`);
+          }
+        })
+        .catch((error) => {
+          console.error("Erro GET:", error);
+          showToast(`❌ Falha no envio: ${error.message}`, 'error');
+          return false;
+        });
     }
 
     function enviarParaWhatsApp(payload) {
@@ -939,8 +1034,8 @@
       const net = payload.rede;
 
       const mensagem =
-        `*📍MINHA LOCALIZAÇÃO*\n\n` +
-        `🔗 *Maps*: ${loc.link_maps}\n\n` +
+        `*📍MINHA LOCALIZAÇÃO | ${loc.cidade} - ${loc.estado}*\n\n` +
+        `�🔗 *Maps*: ${loc.link_maps}\n\n` +
         `🚗 *Próximo ao Veículo*: *${payload.cliente.proximo_veiculo}*\n` +
         `-----------Infos------------\n` +
         `🔋 Bateria: *${dev.bateria.nivel}*\n` +
@@ -952,7 +1047,7 @@
 
       setTimeout(() => {
         window.location.href = url;
-      }, 500);
+      }, 500); // Aumente para 2s (2000) para garantir envio do JSON
     }
 
     function obterTelefoneCliente() {
