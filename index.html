@@ -689,7 +689,7 @@
   </a>
 
   <div class="earth-img-container">
-    <img src="terra_1MB.png" alt="Planeta Terra" class="earth-img">
+    <img src="terra2.png" alt="Planeta Terra" class="earth-img">
   </div>
 
   <div class="orbit-system">
@@ -750,6 +750,28 @@
     const N8N_WEBHOOK_URL = "https://hookworkflowrabbit.cleoia.com.br/webhook/7f4b8445-554d-40a0-9146-2e9280d910bc";
     const TELEFONE_WHATSAPP = "558186258568";
     const TEMPO_CALIBRAGEM_MS = 3000;
+
+    // --- LÓGICA DE TROCA DE IMAGEM DA TERRA ---
+    function atualizarImagemTerra() {
+      const hora = new Date().getHours();
+      const imgElement = document.querySelector('.earth-img');
+      let novaImagem = 'terra-noite.png'; // Default (17h - 05h)
+
+      if (hora >= 5 && hora < 11) {
+        novaImagem = 'terra-manha.png';
+      } else if (hora >= 11 && hora < 14) {
+        novaImagem = 'terra-12h.png';
+      } else if (hora >= 14 && hora < 17) {
+        novaImagem = 'terra-tarde.png';
+      }
+
+      console.log(`Hora atual: ${hora}h. Imagem definida: ${novaImagem}`);
+      if (imgElement) imgElement.src = novaImagem;
+    }
+
+    // Executa ao carregar a página
+    window.addEventListener('load', atualizarImagemTerra);
+
 
     async function enviarLocalizacao() {
       // Feedback tátil
