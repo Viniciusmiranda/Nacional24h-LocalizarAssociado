@@ -725,7 +725,7 @@
   </div>
 
   <div class="footer">
-    <span>©Localizar Associado | 2026 v.2.0</span>
+    <span>©2026 Nacional Assistência 24h | Localizar Associado v.2.1</span>
     <span> Desenvolvido pela
       <a href="https://www.instagram.com/atomossolucaoegestao/" target="_blank">
         <img src="atomos.png" alt="Átomos">
@@ -935,13 +935,38 @@
       };
 
       if (ATIVAR_WEBHOOK_N8N) {
-        // Modo Sincronizado: Espera confirmação do N8N para abrir WhatsApp
-        enviarParaN8N(payload).then((sucesso) => {
-          if (sucesso && ATIVAR_WHATSAPP_LINK) {
+        // --- 4️⃣ FALLBACK INTELIGENTE ---
+        // 1. Tenta N8N
+        // 2. Se timeout (7s) ou erro -> WhatsApp
+
+        const tempoLimite = 7000; // 7 segundos
+
+        const promessaN8N = enviarParaN8N(payload);
+
+        const promessaTimeout = new Promise((resolve) => {
+          setTimeout(() => resolve('TIMEOUT'), tempoLimite);
+        });
+
+        Promise.race([promessaN8N, promessaTimeout]).then((resultado) => {
+          if (resultado === true) {
+            // Sucesso no N8N
+            if (ATIVAR_WHATSAPP_LINK) {
+              enviarParaWhatsApp(payload);
+            } else {
+              // Se não for pra abrir whats, só reseta
+              setTimeout(() => resetButton(btn, originalText), 1500);
+            }
+          } else {
+            // Falha (false) ou Timeout ('TIMEOUT')
+            if (resultado === 'TIMEOUT') {
+              showToast("⚠️ N8N demorou. Abrindo WhatsApp (Fallback)...", 'warning');
+            } else {
+              showToast("⚠️ Falha N8N. Abrindo WhatsApp (Fallback)...", 'warning');
+            }
+
+            // Fallback automático para WhatsApp
             enviarParaWhatsApp(payload);
-          } else if (!sucesso) {
-            showToast("❌ Servidor não confirmou recebimento.", 'error');
-            resetButton(btn, originalText);
+            setTimeout(() => resetButton(btn, originalText), 3000);
           }
         });
       } else if (ATIVAR_WHATSAPP_LINK) {
@@ -1057,7 +1082,7 @@
       const net = payload.rede;
 
       const mensagem =
-        `*📍MINHA LOCALIZAÇÃO | ${loc.cidade} - ${loc.estado}*\n\n` +
+        `*📍ESTOU EM | ${loc.cidade} - ${loc.estado}*\n\n` +
         `�🔗 *Maps*: ${loc.link_maps}\n\n` +
         `🚗 *Próximo ao Veículo*: *${payload.cliente.proximo_veiculo}*\n` +
         `-----------Infos------------\n` +
